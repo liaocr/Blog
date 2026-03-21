@@ -1,14 +1,11 @@
 backend:
-  name: github
-  repo: liaocr/Blog  
-  branch: main # Branch to update (optional; defaults to master)
+  name: git-gateway
+  branch: main
 
-
+# 其他配置保持不变
 site_url: https://liaocr.netlify.app
 display_url: https://liaocr.netlify.app
-# logo_url: https://shwst.one/images/
 locale: 'cn'
-
 
 # This line should *not* be indented
 publish_mode: editorial_workflow
