@@ -29,7 +29,7 @@ category_dir: categories
 code_dir: downloads/code
 i18n_dir: :lang
 skip_render:
-
+- admin/**/*
 # Writing
 new_post_name: :title.md # File name of new posts
 default_layout: post
@@ -105,4 +105,3 @@ deploy:
   repo: git@github.com:liaocr/liaocr.github.io.git
   branch: main
   url: https://liaocr.github.io/ #这里的 xxx 是你的GitHub用户名
-
