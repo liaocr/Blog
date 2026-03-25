@@ -1,17 +1,22 @@
 ---
 title: 2023gdgz01 's Template library
 date: 2026-03-20 19:39:39
-tags:
-
+tags: null
 ---
+
+
 
 
 ![](https://cdn.luogu.com.cn/upload/image_hosting/4i6eqqea.png)
 
 
+
+
 ------------
 
+
 C++ 火车头优化：
+
 
 ```cpp
 #pragma GCC optimize(2)
@@ -63,7 +68,9 @@ C++ 火车头优化：
 #pragma GCC optimize("inline-functions-called-once")
 #pragma GCC optimize("-fdelete-null-pointer-checks")
 
+
 using namespace std;
+
 
 int main()
 {
@@ -75,9 +82,12 @@ int main()
 ```
 ------------
 
+
 # 卡常
 
+
 ### 快读快写
+
 
 ```cpp
 #ifndef FAST_IO
@@ -85,7 +95,9 @@ int main()
 #endif
 ```
 
+
 ### 卡常火车头（考试不可用）
+
 
 ```cpp
 #pragma GCC optimize(2)
@@ -139,7 +151,9 @@ int main()
 #include <iostream>
 #define endl '\n'
 
+
 using namespace std;
+
 
 int main() {
 	ios::sync_with_stdio(false);
@@ -149,9 +163,12 @@ int main() {
 }
 ```
 
+
 # 基础算法
 
+
 ### 高精度
+
 
 ```cpp
 class __t_p_unsigned_long_long {
@@ -296,12 +313,16 @@ class __t_p_unsigned_long_long {
 ```
 # 字符串
 
+
 ### 最小表示法
+
 
 ```cpp
 #include <cstdio>
 
+
 int n, b, c = 1, a[300000];
+
 
 int main() {
 	scanf("%d", &n);
@@ -327,22 +348,228 @@ int main() {
 }
 ```
 
+
+### 后缀数组 SA
+
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+#define N 2000005
+int sa[N], osa[N];
+int rk[N], ork[N];
+int cnt[N];
+
+void SA(string s)
+{
+	int n = s.size(), m = 127;
+	s = ' ' + s;
+
+	for(int i = 1; i <= n; i++)
+	{
+		rk[i] = s[i];
+		cnt[rk[i]]++;
+	}
+	for(int i = 1; i <= m; i++)
+	{
+		cnt[i] += cnt[i-1];
+	}
+	for(int i = n; i >= 1; i--)
+	{
+		sa[cnt[rk[i]]--] = i;
+	}
+
+	for(int w = 1; w < n; w *= 2,m=n)
+	{
+		int p = 0;
+		for(int i = n - w + 1; i <= n; i++)
+		{
+			osa[++p] = i;
+		}
+		for(int i = 1; i <= n; i++)
+		{
+			if(sa[i] > w) osa[++p] = sa[i] - w;
+		}
+
+		memset(cnt,0,sizeof(cnt));
+		for(int i = 1; i <= n; i++)
+		{
+			cnt[rk[osa[i]]]++;
+		}
+		for(int i = 1; i <= m; i++)
+		{
+			cnt[i] += cnt[i-1];
+		}
+		for(int i = n; i >= 1; i--)
+		{
+			sa[cnt[rk[osa[i]]]--] = osa[i];
+		}
+
+		memcpy(ork + 1, rk + 1, n * 4);
+		m = 0;
+		for(int i = 1; i <= n; i++)
+		{
+			if(i == 1)
+			{
+				rk[sa[i]] = ++m;
+				continue;
+			}
+			int x1 = sa[i], x2 = sa[i-1];
+			int y1 = (x1 + w <= n) ? ork[x1 + w] : 0;
+			int y2 = (x2 + w <= n) ? ork[x2 + w] : 0;
+
+			if(ork[x1] == ork[x2] && y1 == y2)
+			{
+				rk[sa[i]] = m;
+			}
+			else
+			{
+				rk[sa[i]] = ++m;
+			}
+		}
+
+		if(m == n) break;
+	}
+
+	for(int i = 1; i <= n; i++)
+	{
+		cout << sa[i] << " ";
+	}
+}
+
+int main()
+{
+	string s;
+	cin >> s;
+	SA(s);
+	return 0;
+}
+```
+
+### 后缀自动机 SAM
+
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+#define N 2000005
+
+int ch[N][26], len[N], fa[N];
+long long size[N]; 
+int las = 1, tot = 1;
+int n; 
+char s[N]; 
+
+void insert(int x)
+{
+	int u = ++tot, p = las;
+	las = tot;
+	len[u] = len[p] + 1;
+	size[u] = 1; 
+
+	for(; p && !ch[p][x]; p = fa[p])
+	{
+		ch[p][x] = u; 
+	}
+
+	if(!p)
+	{
+		fa[u] = 1;
+		return;
+	}
+
+	int q = ch[p][x];
+	if(len[p] + 1 == len[q])
+	{
+		fa[u] = q;
+		return;
+	}
+
+	int uu = ++tot;
+	len[uu] = len[p] + 1;
+	memcpy(ch[uu], ch[q], sizeof(ch[q]));
+	fa[uu] = fa[q];
+	fa[q] = fa[u] = uu;
+	size[uu] = 0; 
+	for(; p && ch[p][x] == q; p = fa[p])
+	{
+		ch[p][x] = uu;
+	}
+}
+
+int tp[N], tmp[N];
+
+void get_tp()
+{
+	for (int i = 0; i <= n; i++)
+		tmp[i] = 0;
+
+	for (int i = 1; i <= tot; i++)
+		tmp[len[i]]++;
+
+	for (int i = 1; i <= n; i++)
+		tmp[i] += tmp[i - 1];
+
+	for (int i = 1; i <= tot; i++)
+		tp[tmp[len[i]]--] = i;
+}
+long long DP() 
+{
+	for (int i = tot; i >= 1; i--)
+	{
+		int now = tp[i];
+		size[fa[now]] += size[now];
+	}
+
+	long long ans = 0;
+	for (int i = 1; i <= tot; i++)
+	{
+		if (size[i] > 1)
+		{
+			ans = max(ans, size[i] * len[i]);
+		}
+	}
+	return ans;
+}
+int main()
+{
+	string s;
+	cin >> s;
+	n = s.size();
+	for(int i = 0; i < n; i++)
+	{
+		insert(s[i] - 'a');
+	}
+	get_tp();
+	long long ans = DP();
+	cout << ans << endl;
+	return 0;
+}
+```
+
+
 # 数论
+
 
 ## gcd
 
+
 ### 递归算法
+
 
 ```cpp
 #include <cstdio>
 
+
 int a, b, g;
+
 
 int gcd(int x, int y) {
 	if (x)
 		return gcd(y % x, x);
 	return y;
 }
+
 
 int main() {
 	scanf("%d%d", &a, &b);
@@ -352,12 +579,16 @@ int main() {
 }
 ```
 
+
 ### 非递归算法
+
 
 ```cpp
 #include <cstdio>
 
+
 int a, b, g;
+
 
 inline int gcd(int x, int y) {
 	int temp;
@@ -369,6 +600,7 @@ inline int gcd(int x, int y) {
 	return y;
 }
 
+
 int main() {
 	scanf("%d%d", &a, &b);
 	g = gcd(a, b);
@@ -377,16 +609,22 @@ int main() {
 }
 ```
 
+
 ### exgcd
+
 
 ## 素数筛法
 
+
 ### 暴力算法
+
 
 ```cpp
 #include <cstdio>
 
+
 int n;
+
 
 inline bool check(int x) {
 	for (register int i = 2; i * i <= x; ++i)
@@ -394,6 +632,7 @@ inline bool check(int x) {
 			return false;
 	return true;
 }
+
 
 int main() {
 	scanf("%d", &n);
@@ -404,13 +643,17 @@ int main() {
 }
 ```
 
+
 ### 埃氏筛
+
 
 ```cpp
 #include <cstdio>
 
+
 bool prime[10000005];
 int n;
+
 
 int main() {
 	scanf("%d", &n);
@@ -424,13 +667,17 @@ int main() {
 }
 ```
 
+
 ### 欧拉筛
+
 
 ```cpp
 #include <cstdio>
 
+
 bool vis[100000005];
 int n, cur, prime[6000005];
+
 
 int main() {
 	scanf("%d", &n);
@@ -450,16 +697,22 @@ int main() {
 }
 ```
 
+
 # 树论
+
 
 ## 并查集
 
+
 ### 并查集
+
 
 ```cpp
 #include <cstdio>
 
+
 int n, m, opt, x, y, fa[100005];
+
 
 int find(int u) {
 	if (u == fa[u])
@@ -467,6 +720,7 @@ int find(int u) {
 	fa[u] = find(fa[u]);
 	return fa[u];
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -488,15 +742,20 @@ int main() {
 }
 ```
 
+
 ### 带权并查集
+
 
 ```cpp
 #include <iostream>
 
+
 using namespace std;
+
 
 char opt;
 int p, t, x, y, fa[30005], dis[30005], _size[30005];
+
 
 int find(int u) {
 	if (u == fa[u])
@@ -507,6 +766,7 @@ int find(int u) {
 	return t;
 }
 
+
 inline void Union(int u, int v) {
 	u = find(u);
 	v = find(v);
@@ -516,6 +776,7 @@ inline void Union(int u, int v) {
 	dis[u] += _size[v];
 	_size[v] += _size[u];
 }
+
 
 int main() {
 	ios::sync_with_stdio(false);
@@ -541,27 +802,35 @@ int main() {
 }
 ```
 
+
 ------------
+
 
 ## LCA
 
+
 ### 暴力
+
 
 ```cpp
 #include <cstdio>
+
 
 struct edge {
 	int next, to;
 };
 
+
 int n, m, x, y, s, cur, fa[500005], dep[500005], head[500005];
 edge e[1000005];
+
 
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 void dfs(int u, int father) {
 	fa[u] = father;
@@ -570,6 +839,7 @@ void dfs(int u, int father) {
 		if (e[i].to != father)
 			dfs(e[i].to, u);
 }
+
 
 inline int LCA(int u, int v) {
 	int x = dep[u], y = dep[v];
@@ -585,6 +855,7 @@ inline int LCA(int u, int v) {
 	}
 	return u;
 }
+
 
 int main()
 {
@@ -603,26 +874,33 @@ int main()
 }
 ```
 
+
 ### 倍增
+
 
 ```cpp
 #include <cstdio>
 #include <algorithm>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
 
+
 int n, m, x, y, s, cur, dep[500005], head[500005], f[30][500005];
 edge e[1000005];
+
 
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 void dfs(int u, int fa) {
 	dep[u] = dep[fa] + 1;
@@ -632,6 +910,7 @@ void dfs(int u, int fa) {
 			dfs(e[i].to, u);
 	}
 }
+
 
 inline int LCA(int u, int v) {
 	if (dep[u] < dep[v])
@@ -648,6 +927,7 @@ inline int LCA(int u, int v) {
 		}
 	return f[0][u];
 }
+
 
 int main()
 {
@@ -669,40 +949,54 @@ int main()
 }
 ```
 
+
 ### RMQ
+
 
 ```cpp
 
+
 ```
+
 
 ### Tarjan
 
+
 ```cpp
+
 
 ```
 
+
 # 图论
+
 
 ## 基础搜索
 
+
 ### dfs
+
 
 ```cpp
 #include <cstdio>
+
 
 struct edge {
 	int next, to;
 };
 
+
 bool vis[100005];
 int n, m, x, y, cur, head[100005];
 edge e[200005];
+
 
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 void dfs(int u) {
 	if (vis[u])
@@ -712,6 +1006,7 @@ void dfs(int u) {
 	for (register int i = head[u]; i; i = e[i].next)
 		dfs(e[i].to);
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -728,28 +1023,35 @@ int main() {
 }
 ```
 
+
 ### bfs
+
 
 ```cpp
 #include <cstdio>
 #include <queue>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
+
 
 bool vis[100005];
 int n, m, x, y, cur, head[100005];
 queue<int> q;
 edge e[200005];
 
+
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 inline void bfs(int u) {
 	q.push(u);
@@ -764,6 +1066,7 @@ inline void bfs(int u) {
 			q.push(e[i].to);
 	}
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -780,30 +1083,38 @@ int main() {
 }
 ```
 
+
 ## 拓扑排序
 
+
 ### bfs
+
 
 ```cpp
 #include <cstdio>
 #include <cstring>
 #include <queue>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
 
+
 int t, n, m, x, y, cur, ans[100005], indegree[100005], head[100005];
 queue<int> q;
 edge e[100005];
+
 
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 inline void toposort() {
 	for (register int i = 1; i <= n; ++i)
@@ -823,6 +1134,7 @@ inline void toposort() {
 	}
 }
 
+
 int main() {
 	scanf("%d", &t);
 	scanf("%d%d", &n, &m);
@@ -841,9 +1153,12 @@ int main() {
 }
 ```
 
+
 ## 最短路
 
+
 ### Dijkstra
+
 
 ```cpp
 #include <cstdio>
@@ -852,22 +1167,27 @@ int main() {
 #include <vector>
 #include <queue>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to, w;
 };
+
 
 int n, m, s, x, y, w, minn, cur, head[100005], dis[100005];
 bool vis[100005];
 edge e[200005];
 priority_queue<pair<int, int>, vector<pair<int, int> >, greater<pair<int, int> > > pq;
 
+
 inline void add(int u, int v, int w) {
 	++cur;
 	e[cur] = {head[u], v, w};
 	head[u] = cur;
 }
+
 
 inline void dijkstra() {
 	memset(dis, 0x3f, sizeof(dis));
@@ -889,6 +1209,7 @@ inline void dijkstra() {
 	}
 }
 
+
 int main() {
 	scanf("%d%d%d", &n, &m, &s);
 	while (m--) {
@@ -902,23 +1223,29 @@ int main() {
 }
 ```
 
+
 ### Bellman-ford
+
 
 ```cpp
 #include <cstdio>
 #include <cstring>
 
+
 struct edge {
 	int u, v, w;
 };
 
+
 int n, m, s, x, y, w, cur, head[100005], dis[100005];
 edge e[200005];
+
 
 inline void add(int u, int v, int w) {
 	++cur;
 	e[cur] = {u, v, w};
 }
+
 
 int main() {
 	scanf("%d%d%d", &n, &m, &s);
@@ -938,29 +1265,36 @@ int main() {
 }
 ```
 
+
 ### spfa
+
 
 ```cpp
 #include <cstdio>
 #include <cstring>
 #include <queue>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to, w;
 };
+
 
 bool vis[100005];
 int n, m, s, x, y, w, cur, head[100005], dis[100005], cnt[100005];
 queue<int> q;
 edge e[200005];
 
+
 inline void add(int u, int v, int w) {
 	++cur;
 	e[cur] = {head[u], v, w};
 	head[u] = cur;
 }
+
 
 inline bool spfa() {
 	memset(dis, 0x3f, sizeof(dis));
@@ -987,6 +1321,7 @@ inline bool spfa() {
 	return false;
 }
 
+
 int main() {
 	scanf("%d%d%d", &n, &m, &s);
 	while (m--) {
@@ -1002,19 +1337,24 @@ int main() {
 }
 ```
 
+
 ### Floyd-warshall
+
 
 ```cpp
 #include <cstdio>
 #include <cstring>
 
+
 int n, m, x, y, w, dis[1005][1005];
+
 
 inline int min(int x, int y) {
 	if (x < y)
 		return x;
 	return y;
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -1038,9 +1378,12 @@ int main() {
 }
 ```
 
+
 ## K 短路
 
+
 ### A*
+
 
 ```cpp
 #include <cstdio>
@@ -1049,11 +1392,14 @@ int main() {
 #include <vector>
 #include <queue>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to, w;
 };
+
 
 struct node {
 	int sorts, dis, u;
@@ -1061,6 +1407,7 @@ struct node {
 		return sorts > nod.sorts;
 	}
 };
+
 
 bool vis[100005];
 int n, m, s, T, k, x, y, w, ans, cur, dis1[100005], dis2[100005], head1[100005], head2[100005];
@@ -1070,16 +1417,19 @@ pair<int, int> t;
 node temp;
 edge e1[200005], e2[200005];
 
+
 inline void add1(int u, int v, int w) {
 	++cur;
 	e1[cur] = {head1[u], v, w};
 	head1[u] = cur;
 }
 
+
 inline void add2(int u, int v, int w) {
 	e2[cur] = {head2[u], v, w};
 	head2[u] = cur;
 }
+
 
 inline void dijkstra() {
 	memset(dis1, 0x3f, sizeof(dis1));
@@ -1102,6 +1452,7 @@ inline void dijkstra() {
 	}
 }
 
+
 inline int astar() {
 	q2.push({dis1[s], 0, s});
 	while (!q2.empty()) {
@@ -1119,6 +1470,7 @@ inline int astar() {
 	return -1;
 }
 
+
 int main() {
 	scanf("%d%d%d%d%d", &n, &m, &s, &T, &k);
 	while (m--) {
@@ -1132,7 +1484,9 @@ int main() {
 }
 ```
 
+
 ### 可持久化左偏树
+
 
 ```cpp
 #include <cstdio>
@@ -1142,7 +1496,9 @@ int main() {
 #include <vector>
 #include <queue>
 
+
 using namespace std;
+
 
 class edgepack {
 	private:
@@ -1158,6 +1514,7 @@ class edgepack {
 			head[u] = cur;
 		}
 };
+
 
 class Tree {
 	private:
@@ -1189,6 +1546,7 @@ class Tree {
 		}
 };
 
+
 bool vis[100005];
 int n, m, s, t, k, x, y, w, a[100005], dis[100005], fa[100005];
 priority_queue<pair<int, int>, vector<pair<int, int> >, greater<pair<int, int> > > q;
@@ -1196,9 +1554,11 @@ pair<int, int> temp;
 edgepack e1, e2;
 Tree tree;
 
+
 inline bool cmp(int x, int y) {
 	return dis[x] < dis[y];
 }
+
 
 inline void dijkstra() {
 	memset(dis, 0x3f, sizeof(dis));
@@ -1220,6 +1580,7 @@ inline void dijkstra() {
 		}
 	}
 }
+
 
 int main() {
 	scanf("%d%d%d%d%d", &n, &m, &s, &t, &k);
@@ -1271,20 +1632,26 @@ int main() {
 }
 ```
 
+
 ## Tarjan
 
+
 ### 强连通分量
+
 
 ```cpp
 #include <cstdio>
 #include <vector>
 #include <stack>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
+
 
 bool vis[500005];
 int n, m, x, y, scc, cur, Time, head[500005], low[500005], dfn[500005];
@@ -1292,11 +1659,13 @@ vector<int> v[500005];
 stack<int> st;
 edge e[4000005];
 
+
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 void tarjan(int u) {
 	++Time;
@@ -1324,6 +1693,7 @@ void tarjan(int u) {
 	}
 }
 
+
 int main() {
 	scanf("%d%d", &n, &m);
 	while (m--) {
@@ -1344,29 +1714,36 @@ int main() {
 }
 ```
 
+
 ### 点双连通分量
+
 
 ```cpp
 #include <cstdio>
 #include <vector>
 #include <stack>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
+
 
 int n, m, x, y, ans, cur, Time, head[500005], low[500005], dfn[500005];
 vector<int> v[500005];
 stack<int> st;
 edge e[4000005];
 
+
 inline void add(int u, int v) {
 	++cur;
 	e[cur] = {head[u], v};
 	head[u] = cur;
 }
+
 
 void tarjan(int u, int fa) {
 	int temp = 0;
@@ -1396,6 +1773,7 @@ void tarjan(int u, int fa) {
 	}
 }
 
+
 int main() {
 	scanf("%d%d", &n, &m);
 	while (m--) {
@@ -1420,28 +1798,35 @@ int main() {
 }
 ```
 
+
 ### 边双连通分量
+
 
 ```cpp
 #include <cstdio>
 #include <vector>
 
+
 using namespace std;
+
 
 struct edge {
 	int next, to;
 };
+
 
 bool vis[4000005];
 int n, m, x, y, cnt, cur = 1, Time, id[500005], low[500005], dfn[500005], head[500005];
 vector<int> ans[500005];
 edge e[4000005];
 
+
 inline void add(int x, int y) {
 	++cur;
 	e[cur] = {head[x], y};
 	head[x] = cur;
 }
+
 
 void tarjan(int u, int eid) {
 	++Time;
@@ -1458,6 +1843,7 @@ void tarjan(int u, int eid) {
 	}
 }
 
+
 void dfs(int u, int sid) {
 	id[u] = sid;
 	ans[sid].push_back(u);
@@ -1465,6 +1851,7 @@ void dfs(int u, int sid) {
 		if (!id[e[i].to] && !vis[i])
 			dfs(e[i].to, sid);
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -1495,7 +1882,9 @@ int main() {
 }
 ```
 
+
 ### 割点
+
 
 ```cpp
 #include <cstdio>
@@ -1503,10 +1892,13 @@ int main() {
 #include <algorithm>
 #include <vector>
 
+
 using namespace std;
+
 
 int n, m, x, y, Time, __count, dfn[100005], low[100005], cnt[100005];
 vector<int> v[400005];
+
 
 void tarjan(int u, int fa) {
 	int temp = 0;
@@ -1531,6 +1923,7 @@ void tarjan(int u, int fa) {
 	}
 }
 
+
 int main() {
 	scanf("%d%d", &n, &m);
 	while (m--) {
@@ -1551,15 +1944,20 @@ int main() {
 }
 ```
 
+
 ## 最小生成树
 
+
 ### Kruskal
+
 
 ```cpp
 #include <cstdio>
 #include <algorithm>
 
+
 using namespace std;
+
 
 struct edge {
 	int u, v, w;
@@ -1568,13 +1966,16 @@ struct edge {
 	}
 };
 
+
 int n, m, x, y, w, cnt, ans, cur, fa[100005];
 edge e[200005];
+
 
 inline void add(int u, int v, int w) {
 	++cur;
 	e[cur] = {u, v, w};
 }
+
 
 int find(int u) {
 	if (u == fa[u])
@@ -1582,6 +1983,7 @@ int find(int u) {
 	fa[u] = find(fa[u]);
 	return fa[u];
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -1609,20 +2011,25 @@ int main() {
 }
 ```
 
+
 ### Prim
+
 
 ```cpp
 #include <cstdio>
 #include <cstring>
 
+
 bool vis[1005];
 int n, m, x, y, w, ans, dis[1005], g[1005][1005];
+
 
 inline int min(int x, int y) {
 	if (x < y)
 		return x;
 	return y;
 }
+
 
 inline void prim() {
 	memset(dis, 0x3f, sizeof(dis));
@@ -1644,6 +2051,7 @@ inline void prim() {
 	}
 }
 
+
 int main() {
 	scanf("%d%d", &n, &m);
 	memset(g, 0x3f, sizeof(g));
@@ -1661,9 +2069,12 @@ int main() {
 }
 ```
 
+
 ## 次小生成树
 
+
 ### Kruskal（严格）
+
 
 ```cpp
 #include <cstdio>
@@ -1671,7 +2082,9 @@ int main() {
 #include <algorithm>
 #include <vector>
 
+
 using namespace std;
+
 
 struct edge {
 	int u, v, w;
@@ -1680,15 +2093,18 @@ struct edge {
 	}
 };
 
+
 bool vis[1005];
 int n, m, x, y, w, cur, sum, ans = 1e9, fa[1005], dis1[1005][1005], dis2[1005][1005];
 vector<pair<int, int> > v[1005];
 edge e[10005];
 
+
 inline void add(int u, int v, int w) {
 	++cur;
 	e[cur] = {u, v, w};
 }
+
 
 int find(int u) {
 	if (u == fa[u])
@@ -1696,6 +2112,7 @@ int find(int u) {
 	fa[u] = find(fa[u]);
 	return fa[u];
 }
+
 
 void dfs(int u1, int u2, int father) {
 	for (auto it: v[u2]) {
@@ -1714,6 +2131,7 @@ void dfs(int u1, int u2, int father) {
 		dfs(u1, x, u2);
 	}
 }
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -1755,11 +2173,17 @@ int main() {
 
 
 
+
+
+
 # 数据结构
+
 
 ## 树状数组
 
+
 ### 一维单点修改，区间查询
+
 
 ```cpp
 template <typename T, const int _size> class BIT {
@@ -1789,7 +2213,9 @@ template <typename T, const int _size> class BIT {
 };
 ```
 
+
 ### 二维区间修改，区间查询
+
 
 ```cpp
 template <typename T, const int _sizex, const int _sizey> class BIT {
@@ -1832,12 +2258,16 @@ template <typename T, const int _sizex, const int _sizey> class BIT {
 };
 ```
 
+
 ## 线段树
+
 
 ### 静态开点区间修改，区间查询
 
+
 ```cpp
 #include <cstdio>
+
 
 template <typename T, const int _size> class segment_tree {
 	protected:
@@ -1906,9 +2336,11 @@ template <typename T, const int _size> class segment_tree {
 		}
 };
 
+
 int n, m, opt, x, y;
 long long k, a[100005];
 segment_tree<long long, 100000> tree;
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -1928,10 +2360,13 @@ int main() {
 }
 ```
 
+
 ### 动态开点单点修改，区间查询
+
 
 ```cpp
 #include <cstdio>
+
 
 template <typename T, const int _size> class segment_tree {
 	protected:
@@ -1986,9 +2421,11 @@ template <typename T, const int _size> class segment_tree {
 		}
 };
 
+
 int n, m, opt, x;
 long long y, a[100005];
 segment_tree<long long, 100000> tree;
+
 
 int main()
 {
@@ -2007,14 +2444,18 @@ int main()
 }
 ```
 
+
 ## 平衡树
 
+
 ### 旋转 treap
+
 
 ```cpp
 #include <cstdio>
 #include <cstdlib> 
 #include <ctime>
+
 
 template <typename T> class rotational_treap {
 	private:
@@ -2178,8 +2619,10 @@ template <typename T> class rotational_treap {
 		}
 };
 
+
 int n, opt, x;
 rotational_treap<int> tree;
+
 
 int main() {
 	scanf("%d", &n);
@@ -2211,7 +2654,9 @@ int main() {
 }
 ```
 
+
 ### Fhq-treap
+
 
 ```cpp
 #include <cstdio>
@@ -2220,7 +2665,9 @@ int main() {
 #include <utility>
 #include <tuple>
 
+
 using namespace std;
+
 
 template <typename T> class non_rotational_treap {
 	private:
@@ -2368,9 +2815,11 @@ template <typename T> class non_rotational_treap {
 		}
 };
 
+
 int n, m, opt;
 long long x, last, ans;
 non_rotational_treap<long long> tree;
+
 
 int main() {
 	srand(time(0));
@@ -2407,16 +2856,21 @@ int main() {
 }
 ```
 
+
 ### 伸展树
+
 
 ### 可持久化旋转 treap
 
+
 ### 可持久化 Fhq-treap
+
 
 ```cpp
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+
 
 template <typename T, const T inf, const int _size> class presistent_non_rotational_treap {
 	public:
@@ -2525,8 +2979,10 @@ template <typename T, const T inf, const int _size> class presistent_non_rotatio
 		}
 };
 
+
 int n, v, opt, x;
 presistent_non_rotational_treap<int, 2147483647, 500000> tree;
+
 
 int main() {
 	scanf("%d", &n);
@@ -2558,9 +3014,12 @@ int main() {
 }
 ```
 
+
 ## 树套树
 
+
 ### 线段树套旋转 treap
+
 
 ```cpp
 #include <cstdio>
@@ -2568,7 +3027,9 @@ int main() {
 #include <ctime>
 #include <algorithm>
 
+
 using namespace std;
+
 
 template <typename T, const int __size> class rotational_treap {
 	public:
@@ -2696,6 +3157,7 @@ template <typename T, const int __size> class rotational_treap {
 		}
 };
 
+
 template <typename T, const int _size> class rotational_treap_in_segment_tree {
 	private:
 		struct node {
@@ -2783,8 +3245,10 @@ template <typename T, const int _size> class rotational_treap_in_segment_tree {
 		}
 };
 
+
 int n, m, opt, l, r, k, a[50005];
 rotational_treap_in_segment_tree<int, 50000> tree;
+
 
 int main() {
 	srand(time(0));
@@ -2819,13 +3283,17 @@ int main() {
 }
 ```
 
+
 ## 左偏树
+
 
 ```cpp
 #include <cstdio>
 #include <algorithm>
 
+
 using namespace std;
+
 
 template <typename T, const T inf, const int _size> class leftist_tree {
 	private:
@@ -2877,8 +3345,10 @@ template <typename T, const T inf, const int _size> class leftist_tree {
 		}
 };
 
+
 int n, m, opt, x, y, t1, t2, a[100005];
 leftist_tree<int, 1000000000, 100000> tree;
+
 
 int main() {
 	scanf("%d%d", &n, &m);
@@ -2909,15 +3379,20 @@ int main() {
 }
 ```
 
+
 ## 树链剖分
 
+
 ### 重链剖分
+
 
 ```cpp
 #include <cstdio>
 #include <algorithm>
 
+
 using namespace std;
+
 
 template <typename T, const int _size> class segment_tree {
 	protected:
@@ -2986,6 +3461,7 @@ template <typename T, const int _size> class segment_tree {
 			return query(1, l, r, 1, n);
 		}
 };
+
 
 template <typename T, const int _node, const int _edge> class heavy_light_decomposition {
 	private:
@@ -3070,8 +3546,10 @@ template <typename T, const int _node, const int _edge> class heavy_light_decomp
 		}
 };
 
+
 int n, m, r, x, y, z, opt, mod, w[200005];
 heavy_light_decomposition<int, 200000, 200000> tree;
+
 
 int main() {
 	scanf("%d%d%d%d", &n, &m, &r, &mod);
